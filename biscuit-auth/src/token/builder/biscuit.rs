@@ -8,7 +8,7 @@ use crate::crypto::PublicKey;
 use crate::datalog::SymbolTable;
 use crate::token::default_symbol_table;
 use crate::{error, Biscuit, KeyPair};
-use rand::{CryptoRng, RngCore};
+use rand::{CryptoRng, Rng};
 
 use std::fmt;
 use std::time::SystemTime;
@@ -133,10 +133,10 @@ impl BiscuitBuilder {
         root_key: &KeyPair,
         symbols: SymbolTable,
     ) -> Result<Biscuit, error::Token> {
-        self.build_with_rng(root_key, symbols, &mut rand::rngs::OsRng)
+        self.build_with_rng(root_key, symbols, &mut rand::rng())
     }
 
-    pub fn build_with_rng<R: RngCore + CryptoRng>(
+    pub fn build_with_rng<R: Rng + CryptoRng + ?Sized>(
         self,
         root: &KeyPair,
         symbols: SymbolTable,

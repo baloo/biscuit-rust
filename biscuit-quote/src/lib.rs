@@ -9,8 +9,8 @@ use biscuit_parser::{
     error,
     parser::{parse_block_source, parse_source},
 };
-use proc_macro2::{Span, TokenStream};
 use manyhow::bail;
+use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
 use std::collections::{HashMap, HashSet};
 use syn::{
@@ -145,7 +145,9 @@ pub fn authorizer(input: proc_macro::TokenStream) -> manyhow::Result<proc_macro:
 /// and replaced by manual block building.
 #[manyhow::manyhow]
 #[proc_macro]
-pub fn authorizer_merge(input: proc_macro::TokenStream) -> manyhow::Result<proc_macro::TokenStream> {
+pub fn authorizer_merge(
+    input: proc_macro::TokenStream,
+) -> manyhow::Result<proc_macro::TokenStream> {
     let ParsedMerge {
         target,
         datalog,

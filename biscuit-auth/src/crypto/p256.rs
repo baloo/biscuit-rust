@@ -9,9 +9,8 @@ use super::error;
 use super::Signature;
 
 use p256::ecdsa::{signature::Signer, signature::Verifier, SigningKey, VerifyingKey};
-use p256::elliptic_curve::rand_core::{CryptoRng, RngCore};
-use p256::NistP256;
-use std::hash::Hash;
+use p256::elliptic_curve::{rand_core::{CryptoRng, Rng},Generate};
+use std::{convert::TryInto, hash::Hash};
 
 /// pair of cryptographic keys used to sign a token's block
 #[derive(Debug, PartialEq)]
@@ -20,8 +19,8 @@ pub struct KeyPair {
 }
 
 impl KeyPair {
-    pub fn new_with_rng<T: RngCore + CryptoRng>(rng: &mut T) -> Self {
-        let kp = SigningKey::random(rng);
+    pub fn new_with_rng<T: Rng + CryptoRng + ?Sized>(rng: &mut T) -> Self {
+        let kp = SigningKey::generate_from_rng(rng);
 
         KeyPair { kp }
     }
@@ -37,15 +36,19 @@ impl KeyPair {
         if bytes.len() != 32 {
             return Err(Format::InvalidKeySize(bytes.len()));
         }
-        let kp = SigningKey::from_bytes(bytes.into())
-            .map_err(|s| s.to_string())
-            .map_err(Format::InvalidKey)?;
+        let kp = SigningKey::from_bytes(
+            bytes
+                .try_into()
+                .map_err(|_| Format::InvalidKeySize(bytes.len()))?,
+        )
+        .map_err(|s| s.to_string())
+        .map_err(Format::InvalidKey)?;
 
         Ok(KeyPair { kp })
     }
 
     pub fn sign(&self, data: &[u8]) -> Result<Signature, error::Format> {
-        let signature: ecdsa::Signature<NistP256> = self
+        let signature: p256::ecdsa::Signature = self
             .kp
             .try_sign(data)
             .map_err(|s| s.to_string())
@@ -120,15 +123,14 @@ impl PrivateKey {
 
     /// deserializes from a big endian byte array
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, error::Format> {
-        // the version of generic-array used by p256 panics if the input length
-        // is incorrect (including when using `.try_into()`)
-        if bytes.len() != 32 {
-            return Err(Format::InvalidKeySize(bytes.len()));
-        }
-        SigningKey::from_bytes(bytes.into())
-            .map(PrivateKey)
-            .map_err(|s| s.to_string())
-            .map_err(Format::InvalidKey)
+        SigningKey::from_bytes(
+            bytes
+                .try_into()
+                .map_err(|_| Format::InvalidKeySize(bytes.len()))?,
+        )
+        .map(PrivateKey)
+        .map_err(|s| s.to_string())
+        .map_err(Format::InvalidKey)
     }
 
     /// deserializes from an hex-encoded string
@@ -196,7 +198,7 @@ pub struct PublicKey(VerifyingKey);
 impl PublicKey {
     /// serializes to a byte array
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.0.to_encoded_point(true).to_bytes().into()
+        self.0.to_sec1_point(true).to_bytes().into()
     }
 
     /// serializes to an hex-encoded string

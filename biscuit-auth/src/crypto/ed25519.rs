@@ -19,7 +19,7 @@ use super::Signature;
 use ed25519_dalek::pkcs8::DecodePrivateKey;
 use ed25519_dalek::Signer;
 use ed25519_dalek::*;
-use rand_core::{CryptoRng, RngCore};
+use rand_core::{CryptoRng, Rng};
 use std::{convert::TryInto, hash::Hash, ops::Drop};
 use zeroize::Zeroize;
 
@@ -30,7 +30,7 @@ pub struct KeyPair {
 }
 
 impl KeyPair {
-    pub fn new_with_rng<T: RngCore + CryptoRng>(rng: &mut T) -> Self {
+    pub fn new_with_rng<T: Rng + CryptoRng + ?Sized>(rng: &mut T) -> Self {
         let kp = ed25519_dalek::SigningKey::generate(rng);
         KeyPair { kp }
     }

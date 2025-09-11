@@ -5,10 +5,10 @@
 //! Test for compilation error messages.
 //! Compile each file in tests/error_message/ and check that error messages haven't changed.
 //!
-//! run with `TRYBUILD=overwrite cargo test` to update the .stderr files containing expected error messages 
+//! run with `TRYBUILD=overwrite cargo test` to update the .stderr files containing expected error messages
 
 #[test]
-fn test_error_msg () {
+fn test_error_msg() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/error_message/*.rs");
 }
